@@ -76,15 +76,18 @@ ${trendStr || 'Tidak ada data tren.'}
 `.trim();
 
   const prompt = `
-Kamu adalah seorang analis bisnis senior yang ahli dalam interpretasi data penjualan ritel.
-Berikut adalah ringkasan data performa bisnis saat ini:
+Kamu adalah seorang analis bisnis senior. Tugasmu HANYA menjawab pertanyaan seputar data penjualan berikut.
+JIKA pertanyaan di luar konteks data penjualan ini (misal: "siapa kamu", pertanyaan umum, pemrograman, dll), JAWAB: "Maaf, saya hanya bisa membantu menganalisis data penjualan bisnis Anda." dan JANGAN berikan analisis tambahan.
 
+=== DATA PENJUALAN ===
 ${context}
 
-${customQuestion ? `Pertanyaan spesifik: ${customQuestion}` : ''}
+${customQuestion ? `=== PERTANYAAN ===\n${customQuestion}` : 'Berikan analisis ringkas mengenai performa bisnis ini.'}
 
-Tolong berikan analisis dalam Bahasa Indonesia. Gunakan format yang ringkas dan mudah dipahami oleh eksekutif bisnis.
-Fokus pada angka-angka kunci dan implikasinya terhadap keputusan bisnis.
+PENTING: 
+- Jawab HANYA apa yang ditanyakan.
+- Jangan membuat laporan panjang jika tidak diminta.
+- Gunakan Bahasa Indonesia yang profesional.
 `.trim();
 
   return await callOpenRouter(prompt);
