@@ -1,5 +1,11 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/chat",
+      "destination": "https://v1.iyhapi.app/chat/completions"
+    }
+  ]
 }

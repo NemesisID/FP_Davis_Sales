@@ -1,5 +1,6 @@
 async function callOpenRouter(prompt) {
-  const url = 'https://corsproxy.io/?https://v1.iyhapi.app/chat/completions';
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const url = isLocalhost ? 'https://corsproxy.io/?https://v1.iyhapi.app/chat/completions' : '/api/chat';
 
   const headers = {
     'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
