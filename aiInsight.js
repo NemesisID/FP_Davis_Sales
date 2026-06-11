@@ -47,6 +47,17 @@ async function callOpenRouter(prompt) {
 
 
 async function getInsight(summaryStats, customQuestion = '') {
+  const trendStr = Object.entries(summaryStats.monthlyMap || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([m, val]) => `${m}: ${formatCurrency(val)}`)
+    .join(' | ');
+
+  const topSegment = Object.entries(summaryStats.segmentMap || {})
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    
+  const topCity = Object.entries(summaryStats.cityMap || {})
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
   const context = `
 === RINGKASAN DATA BISNIS ===
 - Total Penjualan   : ${formatCurrency(summaryStats.totalSales)}
@@ -54,8 +65,13 @@ async function getInsight(summaryStats, customQuestion = '') {
 - Total Pesanan     : ${summaryStats.totalOrders.toLocaleString('id-ID')} transaksi
 - Profit Margin     : ${summaryStats.profitMargin.toFixed(2)}%
 - Kategori Terlaris : ${summaryStats.topCategory}
+- Segmen Teratas    : ${topSegment}
 - Region Terbaik    : ${summaryStats.topRegion}
+- Kota Paling Profit: ${topCity}
 - Sub-Kategori Terburuk (Profit): ${summaryStats.worstSubCat}
+
+=== TREN PENJUALAN BULANAN ===
+${trendStr || 'Tidak ada data tren.'}
 `.trim();
 
   const prompt = `

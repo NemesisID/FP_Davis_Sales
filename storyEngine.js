@@ -33,6 +33,17 @@ async function generateStory(summary, anomalies) {
       : null,
   ].filter(Boolean).join('; ');
 
+  const trendStr = Object.entries(summary.monthlyMap || {})
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([m, val]) => `${m}: $${Math.round(val).toLocaleString('en-US')}`)
+    .join(' | ');
+
+  const topSegment = Object.entries(summary.segmentMap || {})
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    
+  const topCity = Object.entries(summary.cityMap || {})
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
   const prompt = `
 Kamu adalah seorang Chief Data Officer yang menyampaikan laporan eksekutif kepada CEO.
 Gunakan kerangka Data Storytelling SCR (Setup - Conflict - Resolution).
@@ -42,8 +53,13 @@ Gunakan kerangka Data Storytelling SCR (Setup - Conflict - Resolution).
 - Total Profit     : $${summary.totalProfit.toLocaleString('en-US', { maximumFractionDigits: 0 })}
 - Profit Margin    : ${summary.profitMargin.toFixed(2)}%
 - Top Kategori     : ${summary.topCategory}
+- Top Segmen       : ${topSegment}
 - Top Region       : ${summary.topRegion}
+- Top Kota         : ${topCity}
 - Sub-Kategori Terburuk: ${summary.worstSubCat}
+
+=== TREN PENJUALAN BULANAN ===
+${trendStr || 'Tidak ada data tren.'}
 
 === ANOMALI TERDETEKSI ===
 ${anomalyContext || 'Tidak ada anomali kritis.'}

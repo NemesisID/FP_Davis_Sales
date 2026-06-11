@@ -53,6 +53,11 @@ function normalizeRow(row) {
   normalized['Region']        = get('region');
   normalized['Sales']         = get('sales');
   normalized['Profit']        = get('profit');
+  normalized['Segment']       = get('segment');
+  normalized['City']          = get('city');
+  normalized['CountryRegion'] = get('country_region');
+  normalized['Province']      = get('province');
+  normalized['ShipMethod']    = get('ship_method');
 
   normalized._sales  = parseNum(get('sales'));
   normalized._profit = parseNum(get('profit'));

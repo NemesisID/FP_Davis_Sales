@@ -158,6 +158,9 @@ function computeSummary(data) {
   const categoryMap    = {};
   const regionMap      = {};
   const subCategoryMap = {};
+  const monthlyMap     = {};
+  const segmentMap     = {};
+  const cityMap        = {};
 
   data.forEach(row => {
     totalSales  += row._sales;
@@ -167,8 +170,9 @@ function computeSummary(data) {
 
     // Aggregate by Category
     const cat = row.Category || row.category || 'Unknown';
-    if (!categoryMap[cat]) categoryMap[cat] = 0;
-    categoryMap[cat] += row._sales;
+    if (!categoryMap[cat]) categoryMap[cat] = { sales: 0, profit: 0 };
+    categoryMap[cat].sales += row._sales;
+    categoryMap[cat].profit += row._profit;
 
     // Aggregate by Region
     const reg = row.Region || row.region || 'Unknown';
@@ -179,12 +183,29 @@ function computeSummary(data) {
     const sub = row['Sub-Category'] || row.sub_category || 'Unknown';
     if (!subCategoryMap[sub]) subCategoryMap[sub] = 0;
     subCategoryMap[sub] += row._profit;
+
+    // Aggregate sales by Month (Trend)
+    if (row._date) {
+      const ym = `${row._date.getFullYear()}-${String(row._date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthlyMap[ym]) monthlyMap[ym] = 0;
+      monthlyMap[ym] += row._sales;
+    }
+
+    // Aggregate sales by Segment
+    const seg = row.Segment || row.segment || 'Unknown';
+    if (!segmentMap[seg]) segmentMap[seg] = 0;
+    segmentMap[seg] += row._sales;
+
+    // Aggregate profit by City
+    const city = row.City || row.city || 'Unknown';
+    if (!cityMap[city]) cityMap[city] = 0;
+    cityMap[city] += row._profit;
   });
 
   const profitMargin = totalSales !== 0 ? (totalProfit / totalSales) * 100 : 0;
 
   const topCategory = Object.entries(categoryMap)
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    .sort((a, b) => b[1].sales - a[1].sales)[0]?.[0] || 'N/A';
 
   const topRegion = Object.entries(regionMap)
     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
@@ -203,6 +224,9 @@ function computeSummary(data) {
     categoryMap,
     regionMap,
     subCategoryMap,
+    monthlyMap,
+    segmentMap,
+    cityMap,
   };
 }
 
@@ -436,20 +460,15 @@ function drawHorizontalBar(svgId, data, anomalySet = new Set(), opts = {}) {
 
 
 /**
- * drawVerticalBar — Generic vertical bar chart renderer
- *
- * @param {string}   svgId      — ID of the <svg> element
- * @param {object[]} data       — [{ label, value }]
- * @param {Set}      anomalySet — Set of anomalous labels
- * @param {object}   opts       — { formatVal, height }
+ * drawLineChart — Line chart for time-series trend
  */
-function drawVerticalBar(svgId, data, anomalySet = new Set(), opts = {}) {
+function drawLineChart(svgId, data, opts = {}) {
   const svgEl = document.getElementById(svgId);
   if (!svgEl) return;
 
-  const parentW = svgEl.parentElement.clientWidth || 300;
-  const margin  = { top: 16, right: 16, bottom: 60, left: 60 };
-  const height  = opts.height || 240;
+  const parentW = svgEl.parentElement.clientWidth || 500;
+  const margin  = { top: 16, right: 30, bottom: 40, left: 60 };
+  const height  = opts.height || 260;
   const width   = parentW;
   const innerW  = width - margin.left - margin.right;
   const innerH  = height - margin.top - margin.bottom;
@@ -470,20 +489,18 @@ function drawVerticalBar(svgId, data, anomalySet = new Set(), opts = {}) {
   const g = svg.append('g')
     .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  const yMin = Math.min(0, d3.min(data, d => d.value));
-  const yMax = d3.max(data, d => d.value) || 1;
+  data.sort((a, b) => a.label.localeCompare(b.label));
 
-  const xScale = d3.scaleBand()
+  const xScale = d3.scalePoint()
     .domain(data.map(d => d.label))
     .range([0, innerW])
-    .padding(0.3);
+    .padding(0.5);
 
+  const yMax = d3.max(data, d => d.value) || 1;
   const yScale = d3.scaleLinear()
-    .domain([yMin, yMax])
+    .domain([0, yMax])
     .range([innerH, 0])
     .nice();
-
-  const zeroY = yScale(0);
 
   // Grid lines
   g.append('g')
@@ -494,29 +511,35 @@ function drawVerticalBar(svgId, data, anomalySet = new Set(), opts = {}) {
     .attr('stroke-width', 1);
   g.select('.grid .domain').remove();
 
-  // Zero line
-  g.append('line')
-    .attr('x1', 0).attr('x2', innerW)
-    .attr('y1', zeroY).attr('y2', zeroY)
-    .attr('stroke', NEO.stroke)
-    .attr('stroke-width', 2);
+  // Line generator
+  const line = d3.line()
+    .x(d => xScale(d.label))
+    .y(d => yScale(d.value))
+    .curve(d3.curveMonotoneX);
 
-  // Bars
-  g.selectAll('.bar')
+  // Path
+  g.append('path')
+    .datum(data)
+    .attr('fill', 'none')
+    .attr('stroke', '#22D3EE')
+    .attr('stroke-width', 3)
+    .attr('d', line);
+
+  // Dots
+  g.selectAll('.dot')
     .data(data)
     .enter()
-    .append('rect')
-      .attr('class', 'bar')
-      .attr('x', d => xScale(d.label))
-      .attr('y', d => d.value >= 0 ? yScale(d.value) : zeroY)
-      .attr('width',  xScale.bandwidth())
-      .attr('height', d => Math.abs(yScale(d.value) - zeroY))
-      .attr('fill', d => anomalySet.has(d.label) ? NEO.barAnomaly : NEO.barNormal)
-      .attr('stroke', NEO.stroke)
-      .attr('stroke-width', 1.5)
+    .append('circle')
+      .attr('class', 'dot')
+      .attr('cx', d => xScale(d.label))
+      .attr('cy', d => yScale(d.value))
+      .attr('r', 4)
+      .attr('fill', NEO.bg)
+      .attr('stroke', '#22D3EE')
+      .attr('stroke-width', 2)
       .style('cursor', 'pointer')
       .on('mousemove', function(event, d) {
-        d3.select(this).attr('fill', NEO.barHover);
+        d3.select(this).attr('fill', '#22D3EE').attr('r', 6);
         showTooltip(
           `<span style="color:var(--neon-yellow)">${d.label}</span><br/>
            <span class="mono">${fmt(d.value)}</span>`,
@@ -524,26 +547,31 @@ function drawVerticalBar(svgId, data, anomalySet = new Set(), opts = {}) {
         );
       })
       .on('mouseleave', function(event, d) {
-        d3.select(this).attr('fill', anomalySet.has(d.label) ? NEO.barAnomaly : NEO.barNormal);
+        d3.select(this).attr('fill', NEO.bg).attr('r', 4);
         hideTooltip();
       });
 
   // X Axis
-  g.append('g')
+  const xAxis = g.append('g')
     .attr('transform', `translate(0,${innerH})`)
-    .call(d3.axisBottom(xScale).tickSize(0))
-    .select('.domain').attr('stroke', '#333');
-
-  g.selectAll('.tick text')
-    .attr('fill', d => anomalySet.has(d) ? NEO.barAnomaly : NEO.textColor)
+    .call(d3.axisBottom(xScale).tickSize(0));
+    
+  xAxis.select('.domain').attr('stroke', '#333');
+  
+  xAxis.selectAll('.tick text')
+    .attr('fill', NEO.textColor)
     .style('font', NEO.axisFont)
     .attr('dy', '12')
-    .each(function() {
-      // Wrap long labels
-      const el = d3.select(this);
-      const text = el.text();
-      if (text.length > 10) {
-        el.text(text.substring(0, 10) + '…');
+    .each(function(d, i) {
+      if (data.length > 12 && i % 2 !== 0) {
+        d3.select(this).remove();
+      } else {
+        const el = d3.select(this);
+        const parts = d.split('-');
+        if (parts.length === 2) {
+          const date = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 1);
+          el.text(date.toLocaleDateString('id-ID', {month: 'short', year:'2-digit'}));
+        }
       }
     });
 
@@ -557,48 +585,163 @@ function drawVerticalBar(svgId, data, anomalySet = new Set(), opts = {}) {
     .style('font', NEO.axisFont);
 }
 
+/**
+ * drawDonutChart — Donut chart for category proportion
+ */
+function drawDonutChart(svgId, data, opts = {}) {
+  const svgEl = document.getElementById(svgId);
+  if (!svgEl) return;
 
-// ─── Chart: Profit by Sub-Category (horizontal, wide) ──────────────────────
+  const parentW = svgEl.parentElement.clientWidth || 300;
+  const height  = opts.height || 260;
+  const width   = parentW;
+  const radius  = Math.min(width, height) / 2 - 20;
+
+  d3.select(`#${svgId}`).selectAll('*').remove();
+
+  const svg = d3.select(`#${svgId}`)
+    .attr('width', width)
+    .attr('height', height)
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .style('overflow', 'visible');
+
+  svg.append('rect')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('fill', NEO.bg);
+
+  const g = svg.append('g')
+    .attr('transform', `translate(${width / 2},${height / 2})`);
+
+  const colorScale = d3.scaleOrdinal()
+    .domain(data.map(d => d.label))
+    .range(['#22D3EE', '#FFD600', '#BF5AF2', '#00FF94', '#FF0055']);
+
+  const pie = d3.pie()
+    .value(d => d.value)
+    .sort(null);
+
+  const arc = d3.arc()
+    .innerRadius(radius * 0.5)
+    .outerRadius(radius);
+    
+  const arcHover = d3.arc()
+    .innerRadius(radius * 0.5)
+    .outerRadius(radius + 8);
+
+  const arcs = g.selectAll('.arc')
+    .data(pie(data))
+    .enter()
+    .append('g')
+    .attr('class', 'arc');
+
+  arcs.append('path')
+    .attr('d', arc)
+    .attr('fill', d => colorScale(d.data.label))
+    .attr('stroke', NEO.bg)
+    .attr('stroke-width', 4)
+    .style('cursor', 'pointer')
+    .on('mousemove', function(event, d) {
+      d3.select(this).transition().duration(100).attr('d', arcHover);
+      showTooltip(
+        `<span style="color:var(--neon-yellow)">${d.data.label}</span><br/>
+         <span class="mono">${fmt(d.data.value)}</span>`,
+        event
+      );
+    })
+    .on('mouseleave', function(event, d) {
+      d3.select(this).transition().duration(100).attr('d', arc);
+      hideTooltip();
+    });
+
+  // Legend
+  const legend = svg.append('g')
+    .attr('transform', `translate(10, 10)`);
+    
+  data.forEach((d, i) => {
+    const lg = legend.append('g').attr('transform', `translate(0, ${i * 20})`);
+    lg.append('rect').attr('width', 10).attr('height', 10).attr('fill', colorScale(d.label));
+    lg.append('text').attr('x', 16).attr('y', 9).text(d.label)
+      .attr('fill', NEO.textColor).style('font', NEO.axisFont);
+  });
+}
+
+// ─── Chart Renderers ────────────────────────────────────────────────────────
+
+function renderTrendChart(summary) {
+  const data = Object.entries(summary.monthlyMap || {})
+    .map(([label, value]) => ({ label, value }));
+  drawLineChart('chart-trend', data, { height: 280 });
+}
+
 function renderSubCategoryChart(summary, anomalies) {
   const anomalySet = new Set(anomalies.profitOutliers.map(o => o.subCat));
-
   const data = Object.entries(summary.subCategoryMap)
     .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => a.value - b.value); // ascending (worst first)
-
-  drawHorizontalBar(
-    'chart-subcategory',
-    data,
-    anomalySet,
-    {
-      height: Math.max(300, data.length * 34),
-      formatVal: v => fmt(v),
-    }
-  );
+    .sort((a, b) => a.value - b.value);
+  drawHorizontalBar('chart-subcategory', data, anomalySet, { height: Math.max(300, data.length * 34), formatVal: v => fmt(v) });
 }
 
-// ─── Chart: Sales by Category (vertical) ────────────────────────────────────
 function renderCategoryChart(summary) {
   const data = Object.entries(summary.categoryMap)
-    .map(([label, value]) => ({ label, value }))
+    .map(([label, stat]) => ({ label, value: stat.sales }))
     .sort((a, b) => b.value - a.value);
-
-  drawVerticalBar('chart-category', data, new Set(), { height: 260 });
+  drawDonutChart('chart-category', data, { height: 260 });
 }
 
-// ─── Chart: Profit by Region (vertical) ─────────────────────────────────────
-function renderRegionChart(summary) {
-  const lossRegions = new Set(
-    Object.entries(summary.regionMap)
-      .filter(([, v]) => v < 0)
-      .map(([k]) => k)
-  );
-
-  const data = Object.entries(summary.regionMap)
+function renderSegmentChart(summary) {
+  const data = Object.entries(summary.segmentMap)
     .map(([label, value]) => ({ label, value }))
     .sort((a, b) => b.value - a.value);
+  drawDonutChart('chart-segment', data, { height: 260 });
+}
 
-  drawVerticalBar('chart-region', data, lossRegions, { height: 260 });
+function renderCityChart(summary) {
+  // Get top 10 cities by absolute profit (positive or negative)
+  const data = Object.entries(summary.cityMap)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+    .slice(0, 10)
+    .sort((a, b) => a.value - b.value); // Sort ascending for horizontal bar
+
+  const lossCities = new Set(data.filter(d => d.value < 0).map(d => d.label));
+  drawHorizontalBar('chart-city', data, lossCities, { height: Math.max(260, data.length * 34), formatVal: v => fmt(v) });
+}
+
+function renderRegionChart(summary) {
+  const lossRegions = new Set(
+    Object.entries(summary.regionMap).filter(([, v]) => v < 0).map(([k]) => k)
+  );
+  const data = Object.entries(summary.regionMap)
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => a.value - b.value);
+  drawHorizontalBar('chart-region', data, lossRegions, { height: 260, formatVal: v => fmt(v) });
+}
+
+function renderCategorySummaryTable(summary) {
+  const tbody = document.getElementById('category-summary-tbody');
+  if (!tbody) return;
+
+  const html = Object.entries(summary.categoryMap)
+    .sort((a, b) => b[1].sales - a[1].sales)
+    .map(([cat, stat]) => {
+      const margin = stat.sales !== 0 ? (stat.profit / stat.sales) * 100 : 0;
+      let marginColor = 'var(--text-color)';
+      if (margin >= 15) marginColor = 'var(--neon-green)';
+      else if (margin < 0) marginColor = 'var(--neon-red)';
+      else if (margin < 5) marginColor = 'var(--neon-yellow)';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--grid-line);">
+          <td style="padding: 10px 8px;">${cat}</td>
+          <td style="padding: 10px 8px; text-align: right;" class="mono">${fmt(stat.sales)}</td>
+          <td style="padding: 10px 8px; text-align: right;" class="mono">${fmt(stat.profit)}</td>
+          <td style="padding: 10px 8px; text-align: right; color: ${marginColor};" class="mono">${margin.toFixed(1)}%</td>
+        </tr>
+      `;
+    }).join('');
+
+  tbody.innerHTML = html;
 }
 
 
@@ -629,7 +772,7 @@ async function askCustomQuestion() {
 
   try {
     const answer = await getInsight(_cachedSummary, question);
-    output.textContent = answer;
+    output.innerHTML = marked.parse(answer);
   } catch (err) {
     output.textContent = `⚠ Error: ${err.message}`;
   } finally {
@@ -693,9 +836,13 @@ async function main() {
 
   renderKPICards(summary);
   renderAlerts(anomalies);
+  renderTrendChart(summary);
   renderSubCategoryChart(summary, anomalies);
+  renderCityChart(summary);
   renderCategoryChart(summary);
+  renderSegmentChart(summary);
   renderRegionChart(summary);
+  renderCategorySummaryTable(summary);
 
   // ══════════════════════════════════════════════════════════
   // PHASE 3 — Async AI (dengan localStorage Cache)
@@ -742,9 +889,13 @@ window.addEventListener('resize', () => {
     if (_cachedSummary) {
       // Re-compute anomalies reference from cache (no re-fetch needed)
       // We only need subCategoryMap, categoryMap, regionMap from summary
+      renderTrendChart(_cachedSummary);
       renderSubCategoryChart(_cachedSummary, _cachedAnomalies || { profitOutliers: [], momSpikes: [] });
+      renderCityChart(_cachedSummary);
       renderCategoryChart(_cachedSummary);
+      renderSegmentChart(_cachedSummary);
       renderRegionChart(_cachedSummary);
+      renderCategorySummaryTable(_cachedSummary);
     }
   }, 200);
 });
