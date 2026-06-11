@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Dashboard — SCR Framework | Business Analysis</title>
+  <meta name="description" content="End-to-End AI-Augmented Business Dashboard menggunakan kerangka Data Storytelling SCR (Setup-Conflict-Resolution) dengan analisis anomali otomatis." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</head>
+<body>
+
+  <div class="d3-tooltip" id="d3-tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <div class="dashboard-wrapper">
+
+    <header class="page-header" role="banner">
+      <div class="header-left">
+        <span class="header-brand">// AI-AUGMENTED DASHBOARD v1.0</span>
+        <div class="flex-center gap-sm" style="align-items:flex-start; flex-direction:column;">
+          <span class="kicker kicker-red">LIVE ANALYSIS</span>
+          <span
+            id="data-source-status"
+            class="mono"
+            style="font-size:10px; color:var(--neon-blue); letter-spacing:0.06em;"
+          >⬡ Menghubungkan ke Supabase…</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <nav class="tab-bar" role="tablist" aria-label="Dashboard Views">
+          <button
+            id="tab-ai"
+            class="tab-btn active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="content-ai"
+            onclick="switchTab('ai')"
+          >⬡ AI Dashboard</button>
+          <button
+            id="tab-tableau"
+            class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="content-tableau"
+            onclick="switchTab('tableau')"
+          >◈ Tableau View</button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content-ai" class="tab-content active" role="tabpanel" aria-labelledby="tab-ai">
+
+      <section id="zone-setup" class="zone-section" aria-label="Zone 1: Setup">
+
+        <div class="zone-header">
+          <span class="zone-index">01</span>
+          <span class="zone-label">SETUP — Konteks Bisnis</span>
+        </div>
+
+        <div class="brutal-card yellow" style="padding: var(--gap-lg) var(--gap-xl);">
+          <span class="kicker kicker-yellow">AI GENERATED TITLE</span>
+          <h1 id="narrative-title">
+            <span class="loading-pulse">Memuat judul analisis</span>
+          </h1>
+          <p class="text-muted mt-sm" style="font-size:12px; font-family: var(--font-mono);">
+            Powered by <span id="model-name-header" class="text-yellow"></span>
+          </p>
+        </div>
+
+        <div id="summary-cards" aria-label="Key Performance Indicators">
+          <div class="kpi-card yellow">
+            <div class="kpi-label">Total Sales</div>
+            <div class="kpi-value mono loading-pulse">—</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Total Profit</div>
+            <div class="kpi-value mono loading-pulse">—</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Total Orders</div>
+            <div class="kpi-value mono loading-pulse">—</div>
+          </div>
+          <div class="kpi-card red">
+            <div class="kpi-label">Profit Margin</div>
+            <div class="kpi-value mono loading-pulse">—</div>
+          </div>
+        </div>
+
+        <div class="brutal-card green">
+          <div class="flex-between mb-sm">
+            <span class="kicker kicker-green">SETUP — Situasi Awal</span>
+          </div>
+          <div class="scr-label setup">Gambaran Umum Bisnis</div>
+          <p id="setup-text" class="scr-section setup">
+            <span class="loading-pulse">AI sedang menyusun narasi konteks</span>
+          </p>
+        </div>
+
+      </section>
+
+      <hr class="brutal-divider" />
+
+      <section id="zone-conflict" class="zone-section" aria-label="Zone 2: Conflict">
+
+        <div class="zone-header">
+          <span class="zone-index">02</span>
+          <span class="zone-label">CONFLICT — Deteksi Masalah</span>
+        </div>
+
+        <div class="conflict-layout">
+
+          <aside>
+            <div class="brutal-card red" style="padding: var(--gap-md);">
+
+              <div class="flex-between mb-md">
+                <span class="kicker kicker-red">⚠ ALERT PANEL</span>
+                <span id="alert-count" class="mono text-red" style="font-size:11px;">0 anomali</span>
+              </div>
+
+              <div class="alert-panel-tabs" role="tablist" aria-label="Alert Panel Tabs">
+                <button
+                  id="alert-tab-raw"
+                  class="alert-tab-btn active"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="alert-content-raw"
+                  onclick="switchAlertTab('raw')"
+                >Raw Data</button>
+                <button
+                  id="alert-tab-ai"
+                  class="alert-tab-btn"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="alert-content-ai"
+                  onclick="switchAlertTab('ai')"
+                >AI Narrative</button>
+              </div>
+
+              <div id="alert-content-raw" class="alert-tab-content active" role="tabpanel" aria-labelledby="alert-tab-raw">
+                <div id="alert-list" class="alert-scroll" aria-live="polite">
+                  <div class="alert-item warning">
+                    <span class="alert-dot"></span>
+                    <span>Memuat data anomali…</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="alert-content-ai" class="alert-tab-content" role="tabpanel" aria-labelledby="alert-tab-ai">
+                <div id="ai-alert-summary" class="insight-box" style="margin-top: 0; border-left: 4px solid var(--neon-red);">
+                  <span class="loading-pulse">AI sedang merangkum anomali</span>
+                </div>
+              </div>
+
+            </div>
+          </aside>
+
+          <div class="chart-grid">
+
+            <div class="chart-container chart-wide" id="chart-subcategory-wrap">
+              <div class="chart-title">Profit per Sub-Kategori &nbsp;
+                <span class="kicker kicker-red" style="font-size:9px;">RED = ANOMALI</span>
+              </div>
+              <svg id="chart-subcategory" width="100%" aria-label="Bar chart profit per sub-kategori"></svg>
+            </div>
+
+            <div class="chart-container" id="chart-category-wrap">
+              <div class="chart-title">Sales per Kategori</div>
+              <svg id="chart-category" width="100%" aria-label="Bar chart sales per kategori"></svg>
+            </div>
+
+            <div class="chart-container" id="chart-region-wrap">
+              <div class="chart-title">Profit per Region</div>
+              <svg id="chart-region" width="100%" aria-label="Bar chart profit per region"></svg>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <hr class="brutal-divider" />
+
+      <section id="zone-resolution" class="zone-section" aria-label="Zone 3: Resolution">
+
+        <div class="zone-header">
+          <span class="zone-index">03</span>
+          <span class="zone-label">RESOLUTION — Rekomendasi AI</span>
+        </div>
+
+        <div class="resolution-layout">
+
+          <div class="brutal-card blue">
+            <div class="flex-between mb-md">
+              <span class="kicker kicker-blue">RESOLUTION — Narasi SCR</span>
+              <div class="model-badge" id="model-badge" aria-label="AI model aktif">
+                <span id="model-badge-text"></span>
+              </div>
+            </div>
+
+            <div class="scr-label conflict">Konflik Teridentifikasi</div>
+            <div id="conflict-text" class="scr-section conflict mb-md">
+              <span class="loading-pulse">AI sedang mengidentifikasi konflik</span>
+            </div>
+
+            <div class="scr-label resolution">Rekomendasi Tindakan</div>
+            <div id="resolution-text" class="scr-section resolution">
+              <span class="loading-pulse">AI sedang menyusun rekomendasi</span>
+            </div>
+          </div>
+
+          <div class="brutal-card green">
+            <span class="kicker kicker-green">AI INSIGHT ENGINE</span>
+            <h3 style="margin-bottom: var(--gap-sm);">3 Insight Utama</h3>
+
+            <div id="insight-output" class="insight-box">
+              <span class="loading-pulse">AI sedang menghasilkan insight</span>
+            </div>
+
+            <div style="margin-top: var(--gap-lg);">
+              <div class="scr-label" style="color: var(--neon-green); margin-bottom: 8px;">
+                Tanyakan ke AI
+              </div>
+              <div class="question-row">
+                <input
+                  id="custom-question-input"
+                  class="brutal-input"
+                  type="text"
+                  placeholder="Contoh: Apa penyebab rugi di sub-kategori Tables?"
+                  aria-label="Pertanyaan kustom ke AI"
+                  onkeydown="handleQuestionEnter(event)"
+                />
+                <button
+                  id="ask-btn"
+                  class="brutal-btn"
+                  onclick="askCustomQuestion()"
+                  aria-label="Kirim pertanyaan ke AI"
+                >▶ Tanya</button>
+              </div>
+              <div id="custom-answer" class="insight-box mt-sm" style="display:none;"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <footer style="
+        padding-top: var(--gap-lg);
+        border-top: var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--gap-md);
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      " role="contentinfo">
+        <span>AI-AUGMENTED DASHBOARD // SCR FRAMEWORK</span>
+        <span id="footer-timestamp"></span>
+        <span>D3.js v7 + IYH API + Supabase</span>
+      </footer>
+
+    </main>
+
+    <div id="content-tableau" class="tab-content" role="tabpanel" aria-labelledby="tab-tableau">
+      <div class="tableau-placeholder">
+        <div class="icon">◈</div>
+        <span>Tableau Embed akan ditampilkan di sini.</span>
+        <span class="text-muted" style="font-size:11px;">Sisipkan &lt;tableau-viz&gt; atau iframe Tableau Public di bawah ini.</span>
+        <button class="brutal-btn secondary" onclick="switchTab('ai')">← Kembali ke AI Dashboard</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="config.js"></script>
+  <script src="supabaseLoader.js"></script>
+  <script src="aiInsight.js"></script>
+  <script src="anomalyDetector.js"></script>
+  <script src="storyEngine.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b.id === `tab-${name}`);
+        b.setAttribute('aria-selected', b.id === `tab-${name}`);
+      });
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === `content-${name}`);
+      });
+    }
+
+    function switchAlertTab(name) {
+      document.querySelectorAll('.alert-tab-btn').forEach(b => {
+        b.classList.toggle('active', b.id === `alert-tab-${name}`);
+        b.setAttribute('aria-selected', b.id === `alert-tab-${name}`);
+      });
+      document.querySelectorAll('.alert-tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === `alert-content-${name}`);
+      });
+    }
+
+    function handleQuestionEnter(event) {
+      if (event.key === 'Enter') askCustomQuestion();
+    }
+
+    document.getElementById('footer-timestamp').textContent =
+      new Date().toLocaleString('id-ID', {
+        dateStyle: 'long', timeStyle: 'short', timeZone: 'Asia/Jakarta'
+      }).toUpperCase();
+  </script>
+
+</body>
+</html>
