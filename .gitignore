@@ -1,26 +1,13 @@
-# ─── API Keys & Konfigurasi Sensitif ─────────────────────────────────────────
-# File ini WAJIB di-copy ke config.js dan diisi dengan nilai asli.
-# Jangan pernah commit config.js ke repository!
 config.js
-
-# ─── Dataset CSV (bisa besar, tidak perlu di-commit) ─────────────────────────
 *.csv
 *.sql
-
-# ─── OS & Editor ──────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# ─── VS Code ──────────────────────────────────────────────────────────────────
 .vscode/
 *.code-workspace
-
-# ─── Node.js (jika ada) ───────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
-
-# ─── Misc ─────────────────────────────────────────────────────────────────────
 *.log
 .env
 .env.local
