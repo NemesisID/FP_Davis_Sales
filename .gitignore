@@ -5,6 +5,7 @@ config.js
 
 # ─── Dataset CSV (bisa besar, tidak perlu di-commit) ─────────────────────────
 *.csv
+*.sql
 
 # ─── OS & Editor ──────────────────────────────────────────────────────────────
 .DS_Store

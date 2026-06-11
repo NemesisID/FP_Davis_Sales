@@ -97,3 +97,64 @@ function showLoadingStatus(msg) {
   const el = document.getElementById('data-source-status');
   if (el) el.textContent = msg;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GLOBAL AI CACHE (SUPABASE)
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function getAiCacheFromSupabase(fingerprint) {
+  try {
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/aiRagil?fingerprint=eq.${encodeURIComponent(fingerprint)}&limit=1`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey':        CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        'Content-Type':  'application/json',
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return {
+        title: data[0].title,
+        story: data[0].story,
+        insight: data[0].insight,
+        alert: data[0].alert
+      };
+    }
+  } catch (err) {
+    console.warn('[supabaseLoader] Gagal membaca cache AI dari Supabase:', err);
+  }
+  return null;
+}
+
+async function saveAiCacheToSupabase(fingerprint, aiData) {
+  try {
+    const url = `${CONFIG.SUPABASE_URL}/rest/v1/aiRagil`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'apikey':        CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify({
+        fingerprint: fingerprint,
+        title: aiData.title,
+        story: aiData.story,
+        insight: aiData.insight,
+        alert: aiData.alert
+      })
+    });
+    if (!res.ok) {
+      console.warn('[supabaseLoader] Gagal menyimpan cache AI:', await res.text());
+    } else {
+      console.log('[supabaseLoader] Berhasil menyimpan cache AI ke Supabase.');
+    }
+  } catch (err) {
+    console.warn('[supabaseLoader] Gagal menyimpan cache AI ke Supabase:', err);
+  }
+}
+

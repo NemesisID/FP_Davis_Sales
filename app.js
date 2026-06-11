@@ -845,23 +845,41 @@ async function main() {
   renderCategorySummaryTable(summary);
 
   // ══════════════════════════════════════════════════════════
-  // PHASE 3 — Async AI (dengan localStorage Cache)
+  // PHASE 3 — Async AI (Global Database Cache)
   // ══════════════════════════════════════════════════════════
-  console.log('[app] Phase 3: Dispatching AI requests…');
+  console.log('[app] Phase 3: Dispatching AI requests (Checking DB Cache)…');
 
   const fingerprint = makeSummaryFingerprint(summary);
-  let aiData = loadAICache(fingerprint);
+
+  // Buat minimum delay 2 detik agar UI "Sedang Diproses AI" selalu terlihat
+  const delayPromise = new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Ambil dari Supabase (global cache) bukan localStorage
+  const fetchDbPromise = typeof getAiCacheFromSupabase === 'function' 
+    ? getAiCacheFromSupabase(fingerprint) 
+    : Promise.resolve(null);
+
+  // Tunggu keduanya selesai (cache fetch & 2s delay)
+  const [dbAiData] = await Promise.all([fetchDbPromise, delayPromise]);
+
+  let aiData = dbAiData;
 
   if (!aiData) {
     // Cache miss — panggil API secara bergantian
-    console.log('[cache] Memanggil AI API (sequential)…');
+    console.log('[cache] Cache Supabase kosong. Memanggil AI API (sequential)…');
     const titleVal   = await generateTitle(summary, anomalies);
     const storyVal   = await generateStory(summary, anomalies);
     const insightVal = await getInsight(summary, 'Berikan 3 insight utama dari data ini dalam format bullet point.');
     const alertVal   = await narrateAllAlerts(anomalies);
 
     aiData = { title: titleVal, story: storyVal, insight: insightVal, alert: alertVal };
-    saveAICache(fingerprint, aiData);
+    
+    // Simpan ke Supabase agar device lain bisa pakai
+    if (typeof saveAiCacheToSupabase === 'function') {
+      await saveAiCacheToSupabase(fingerprint, aiData);
+    }
+  } else {
+    console.log('[cache] Berhasil memuat data AI dari Supabase Cache!');
   }
 
   // ── Render hasil AI (dari cache atau API baru) ────────────────────────────
