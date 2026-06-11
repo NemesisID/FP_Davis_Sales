@@ -161,6 +161,13 @@ function computeSummary(data) {
   const monthlyMap     = {};
   const segmentMap     = {};
   const cityMap        = {};
+  const regionSubCatMap = {};
+
+  const aiContext = {
+    regions: {},
+    subCategories: {},
+    segments: {},
+  };
 
   data.forEach(row => {
     totalSales  += row._sales;
@@ -168,38 +175,49 @@ function computeSummary(data) {
 
     if (row['Order ID']) orderIds.add(row['Order ID']);
 
-    // Aggregate by Category
     const cat = row.Category || row.category || 'Unknown';
     if (!categoryMap[cat]) categoryMap[cat] = { sales: 0, profit: 0 };
     categoryMap[cat].sales += row._sales;
     categoryMap[cat].profit += row._profit;
 
-    // Aggregate by Region
     const reg = row.Region || row.region || 'Unknown';
     if (!regionMap[reg]) regionMap[reg] = 0;
     regionMap[reg] += row._profit;
 
-    // Aggregate profit by Sub-Category
     const sub = row['Sub-Category'] || row.sub_category || 'Unknown';
     if (!subCategoryMap[sub]) subCategoryMap[sub] = 0;
     subCategoryMap[sub] += row._profit;
 
-    // Aggregate sales by Month (Trend)
+    if (!regionSubCatMap[reg]) regionSubCatMap[reg] = {};
+    if (!regionSubCatMap[reg][sub]) regionSubCatMap[reg][sub] = 0;
+    regionSubCatMap[reg][sub] += row._profit;
+
     if (row._date) {
       const ym = `${row._date.getFullYear()}-${String(row._date.getMonth() + 1).padStart(2, '0')}`;
       if (!monthlyMap[ym]) monthlyMap[ym] = 0;
       monthlyMap[ym] += row._sales;
     }
 
-    // Aggregate sales by Segment
     const seg = row.Segment || row.segment || 'Unknown';
     if (!segmentMap[seg]) segmentMap[seg] = 0;
     segmentMap[seg] += row._sales;
 
-    // Aggregate profit by City
     const city = row.City || row.city || 'Unknown';
     if (!cityMap[city]) cityMap[city] = 0;
     cityMap[city] += row._profit;
+
+    // Build AI Context Data
+    if (!aiContext.regions[reg]) aiContext.regions[reg] = { sales: 0, profit: 0 };
+    aiContext.regions[reg].sales += row._sales;
+    aiContext.regions[reg].profit += row._profit;
+
+    if (!aiContext.subCategories[sub]) aiContext.subCategories[sub] = { sales: 0, profit: 0 };
+    aiContext.subCategories[sub].sales += row._sales;
+    aiContext.subCategories[sub].profit += row._profit;
+
+    if (!aiContext.segments[seg]) aiContext.segments[seg] = { sales: 0, profit: 0 };
+    aiContext.segments[seg].sales += row._sales;
+    aiContext.segments[seg].profit += row._profit;
   });
 
   const profitMargin = totalSales !== 0 ? (totalProfit / totalSales) * 100 : 0;
@@ -227,6 +245,8 @@ function computeSummary(data) {
     monthlyMap,
     segmentMap,
     cityMap,
+    regionSubCatMap,
+    aiContext,
   };
 }
 

@@ -53,24 +53,39 @@ async function getInsight(summaryStats, customQuestion = '') {
     .map(([m, val]) => `${m}: ${formatCurrency(val)}`)
     .join(' | ');
 
-  const regionStr = Object.entries(summaryStats.regionMap || {})
-    .sort((a, b) => b[1] - a[1])
-    .map(([r, val]) => `${r}: ${formatCurrency(val)}`)
+  const getMargin = (sales, profit) => sales !== 0 ? ((profit / sales) * 100).toFixed(1) + '%' : '0%';
+
+  const regionStr = Object.entries(summaryStats.aiContext?.regions || {})
+    .sort((a, b) => b[1].profit - a[1].profit)
+    .map(([r, stats]) => `${r} -> Sales: ${formatCurrency(stats.sales)}, Profit: ${formatCurrency(stats.profit)} (Margin: ${getMargin(stats.sales, stats.profit)})`)
     .join('\n  ');
 
-  const subCatStr = Object.entries(summaryStats.subCategoryMap || {})
-    .sort((a, b) => b[1] - a[1])
-    .map(([s, val]) => `${s}: ${formatCurrency(val)}`)
+  const subCatStr = Object.entries(summaryStats.aiContext?.subCategories || {})
+    .sort((a, b) => b[1].profit - a[1].profit)
+    .map(([s, stats]) => `${s} -> Sales: ${formatCurrency(stats.sales)}, Profit: ${formatCurrency(stats.profit)} (Margin: ${getMargin(stats.sales, stats.profit)})`)
     .join('\n  ');
     
   const catStr = Object.entries(summaryStats.categoryMap || {})
     .sort((a, b) => b[1].profit - a[1].profit)
-    .map(([c, val]) => `${c} (Profit: ${formatCurrency(val.profit)})`)
+    .map(([c, val]) => `${c} -> Sales: ${formatCurrency(val.sales)}, Profit: ${formatCurrency(val.profit)} (Margin: ${getMargin(val.sales, val.profit)})`)
     .join('\n  ');
 
-  const topSegment = Object.entries(summaryStats.segmentMap || {})
-    .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-    
+  const segmentStr = Object.entries(summaryStats.aiContext?.segments || {})
+    .sort((a, b) => b[1].profit - a[1].profit)
+    .map(([seg, stats]) => `${seg} -> Sales: ${formatCurrency(stats.sales)}, Profit: ${formatCurrency(stats.profit)} (Margin: ${getMargin(stats.sales, stats.profit)})`)
+    .join('\n  ');
+
+  const regionLossesStr = Object.entries(summaryStats.regionSubCatMap || {})
+    .map(([reg, subMap]) => {
+      const losses = Object.entries(subMap)
+        .filter(([sub, profit]) => profit < 0)
+        .sort((a, b) => a[1] - b[1])
+        .map(([sub, profit]) => `${sub} (${formatCurrency(profit)})`);
+      return losses.length > 0 ? `${reg}: ${losses.join(', ')}` : null;
+    })
+    .filter(Boolean)
+    .join('\n  ');
+
   const topCity = Object.entries(summaryStats.cityMap || {})
     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
@@ -81,19 +96,22 @@ async function getInsight(summaryStats, customQuestion = '') {
 - Total Pesanan     : ${summaryStats.totalOrders.toLocaleString('id-ID')} transaksi
 - Profit Margin     : ${summaryStats.profitMargin.toFixed(2)}%
 - Kategori Terlaris : ${summaryStats.topCategory}
-- Segmen Teratas    : ${topSegment}
-- Region Terbaik    : ${summaryStats.topRegion}
 - Kota Paling Profit: ${topCity}
-- Sub-Kategori Terburuk (Profit): ${summaryStats.worstSubCat}
 
-=== PROFIT PER REGION ===
+=== PERFORMA REGION (Sales, Profit, Margin) ===
   ${regionStr || 'N/A'}
 
-=== PROFIT PER KATEGORI ===
+=== PERFORMA SEGMEN (Sales, Profit, Margin) ===
+  ${segmentStr || 'N/A'}
+
+=== PERFORMA KATEGORI ===
   ${catStr || 'N/A'}
 
-=== PROFIT PER SUB-KATEGORI ===
+=== PERFORMA SUB-KATEGORI ===
   ${subCatStr || 'N/A'}
+
+=== RINCIAN KERUGIAN PER REGION (SUB-KATEGORI MINUS) ===
+  ${regionLossesStr || 'Tidak ada region yang memiliki sub-kategori merugi.'}
 
 === TREN PENJUALAN BULANAN ===
   ${trendStr || 'Tidak ada data tren.'}
