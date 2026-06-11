@@ -41,4 +41,4 @@ const configContent = `const CONFIG = {
 
 const configPath = path.join(__dirname, 'config.js');
 fs.writeFileSync(configPath, configContent);
-console.log('[build.js] config.js generated successfully from Environment Variables!');
+console.log('[build.js] config.js generated successfully!');
