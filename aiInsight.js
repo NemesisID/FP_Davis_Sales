@@ -53,6 +53,21 @@ async function getInsight(summaryStats, customQuestion = '') {
     .map(([m, val]) => `${m}: ${formatCurrency(val)}`)
     .join(' | ');
 
+  const regionStr = Object.entries(summaryStats.regionMap || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([r, val]) => `${r}: ${formatCurrency(val)}`)
+    .join('\n  ');
+
+  const subCatStr = Object.entries(summaryStats.subCategoryMap || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([s, val]) => `${s}: ${formatCurrency(val)}`)
+    .join('\n  ');
+    
+  const catStr = Object.entries(summaryStats.categoryMap || {})
+    .sort((a, b) => b[1].profit - a[1].profit)
+    .map(([c, val]) => `${c} (Profit: ${formatCurrency(val.profit)})`)
+    .join('\n  ');
+
   const topSegment = Object.entries(summaryStats.segmentMap || {})
     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
     
@@ -60,7 +75,7 @@ async function getInsight(summaryStats, customQuestion = '') {
     .sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
   const context = `
-=== RINGKASAN DATA BISNIS ===
+=== RINGKASAN UTAMA ===
 - Total Penjualan   : ${formatCurrency(summaryStats.totalSales)}
 - Total Profit      : ${formatCurrency(summaryStats.totalProfit)}
 - Total Pesanan     : ${summaryStats.totalOrders.toLocaleString('id-ID')} transaksi
@@ -71,8 +86,17 @@ async function getInsight(summaryStats, customQuestion = '') {
 - Kota Paling Profit: ${topCity}
 - Sub-Kategori Terburuk (Profit): ${summaryStats.worstSubCat}
 
+=== PROFIT PER REGION ===
+  ${regionStr || 'N/A'}
+
+=== PROFIT PER KATEGORI ===
+  ${catStr || 'N/A'}
+
+=== PROFIT PER SUB-KATEGORI ===
+  ${subCatStr || 'N/A'}
+
 === TREN PENJUALAN BULANAN ===
-${trendStr || 'Tidak ada data tren.'}
+  ${trendStr || 'Tidak ada data tren.'}
 `.trim();
 
   const prompt = `
