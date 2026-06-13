@@ -78,7 +78,7 @@ function normalizeRow(row) {
 async function loadFromSupabase() {
   console.log(`[supabaseLoader] Mengambil data dari tabel "${CONFIG.SUPABASE_TABLE}"…`);
 
-  showLoadingStatus('Menghubungkan ke Supabase…');
+  showLoadingStatus('Menghubungkan ke Supabase', true);
 
   const raw = await supabaseFetchAll(CONFIG.SUPABASE_TABLE);
 
@@ -87,15 +87,21 @@ async function loadFromSupabase() {
   }
 
   console.log(`[supabaseLoader] ${raw.length} baris diterima.`);
-  showLoadingStatus(`${raw.length} baris dimuat dari Supabase ✓`);
+  showLoadingStatus(`${raw.length} baris dimuat dari Supabase`, false);
 
   return raw.map(normalizeRow);
 }
 
 
-function showLoadingStatus(msg) {
+function showLoadingStatus(msg, isLoading = true) {
   const el = document.getElementById('data-source-status');
-  if (el) el.textContent = msg;
+  if (el) {
+    if (isLoading) {
+      el.innerHTML = `<i class="fa-solid fa-hourglass-half fa-spin"></i> <span class="loading-pulse">${msg}</span>`;
+    } else {
+      el.innerHTML = `<i class="fa-solid fa-database"></i> ${msg}`;
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

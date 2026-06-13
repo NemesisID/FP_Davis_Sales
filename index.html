@@ -29,7 +29,7 @@
           id="data-source-status"
           class="mono"
           style="font-size:10px; color:var(--neon-blue); letter-spacing:0.06em;"
-        ><i class="fa-solid fa-database"></i> Menghubungkan ke Supabase…</span>
+        ><i class="fa-solid fa-hourglass-half fa-spin"></i> <span class="loading-pulse">Menghubungkan ke Supabase</span></span>
       </div>
 
       <div class="header-right">
@@ -280,7 +280,7 @@
             ><i class="fa-solid fa-paper-plane"></i> Tanya</button>
           </div>
 
-          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;"><i class="fa-solid fa-bolt"></i> Pertanyaan Cepat:</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Pertanyaan Cepat:</div>
           <div class="quick-questions" style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="quick-btn" onclick="document.getElementById('custom-question-input').value='Apa penyebab utama kerugian di region tertentu?'; askCustomQuestion();">Penyebab Kerugian</button>
             <button class="quick-btn" onclick="document.getElementById('custom-question-input').value='Produk apa yang harus segera dihentikan penjualannya?'; askCustomQuestion();">Evaluasi Produk</button>
@@ -291,25 +291,6 @@
         </div>
 
       </section>
-
-      <footer style="
-        margin-top: var(--gap-xl);
-        padding-top: var(--gap-lg);
-        border-top: var(--border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: var(--gap-md);
-        color: var(--text-muted);
-        font-family: var(--font-mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
-      " role="contentinfo">
-        <span><i class="fa-solid fa-chart-pie"></i> DASHBOARD SALES</span>
-        <span><i class="fa-regular fa-copyright"></i> <span id="footer-year"></span> Ragil Hidayatulloh. All rights reserved.</span>
-        <span><i class="fa-solid fa-brain"></i> Dibuat dengan Harta, Tahta, Logika</span>
-      </footer>
 
     </main>
 

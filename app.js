@@ -786,7 +786,7 @@ async function askCustomQuestion() {
 
   // UI loading state
   btn.disabled = true;
-  btn.textContent = '⏳ Memproses…';
+  btn.innerHTML = '<i class="fa-solid fa-hourglass-half fa-spin"></i> Memproses…';
   output.style.display = 'block';
   output.innerHTML = '<span class="loading-pulse">AI sedang menjawab</span>';
 
@@ -797,7 +797,7 @@ async function askCustomQuestion() {
     output.textContent = `⚠ Error: ${err.message}`;
   } finally {
     btn.disabled = false;
-    btn.textContent = '▶ Tanya';
+    btn.textContent = '<i class="fa-solid fa-paper-plane"></i> Tanya';
   }
 }
 
