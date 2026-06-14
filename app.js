@@ -797,7 +797,7 @@ async function askCustomQuestion() {
     output.textContent = `⚠ Error: ${err.message}`;
   } finally {
     btn.disabled = false;
-    btn.textContent = '<i class="fa-solid fa-paper-plane"></i> Tanya';
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tanya';
   }
 }
 
